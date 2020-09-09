@@ -21,7 +21,7 @@ public class OAuth2AuthorizationServerConfig extends AuthorizationServerConfigur
         // @formatter:off
         clients.inMemory()
                 .withClient("client")
-                    .authorizedGrantTypes("implicit")
+                    .authorizedGrantTypes("authorization_code")
                     .scopes("read", "write")
                     .redirectUris("http://localhost:8080/")
                     .secret("{noop}secret"); // 密码不加密

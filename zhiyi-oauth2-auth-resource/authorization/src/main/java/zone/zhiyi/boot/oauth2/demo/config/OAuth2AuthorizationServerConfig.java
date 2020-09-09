@@ -4,10 +4,12 @@ import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
 
 /**
  * 授权服务器配置
@@ -20,6 +22,18 @@ public class OAuth2AuthorizationServerConfig extends AuthorizationServerConfigur
     @Qualifier("authenticationManagerBean")
     private final AuthenticationManager authenticationManager;
 
+    private final UserDetailsService userDetailsService;
+
+    /**
+     * 配置 Spring Security
+     */
+    @Override
+    public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
+        // 已经提供了默认配置
+        // check_token 接口已经被认证服务器代理, 资源服务器不会判断token存在,所以应该直接开发这个接口
+        security.checkTokenAccess("permitAll()");
+    }
+
     /**
      * 配置客户端
      */
@@ -28,11 +42,11 @@ public class OAuth2AuthorizationServerConfig extends AuthorizationServerConfigur
         // @formatter:off
         clients.inMemory()
                 .withClient("client")
-                    .authorizedGrantTypes("password", "refresh_token") // 多一个 refresh_token !!!
-                    .authorities("ROLE_CLIENT") // 角色
-                    .scopes("read", "write")    // token使用范围
-                    .secret("{noop}secret"); // 密码不加密
-
+                    .authorizedGrantTypes("password", "refresh_token")
+                    .authorities("ROLE_CLIENT")
+                    .scopes("read", "write")
+                    .secret("{noop}secret") // 密码不加密
+                    .redirectUris("http://localhost:8080/tonr2/sparklr/photos");
         // @formatter:on
     }
 
@@ -43,6 +57,7 @@ public class OAuth2AuthorizationServerConfig extends AuthorizationServerConfigur
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
         // @formatter:off
         endpoints
+                .userDetailsService(userDetailsService)   // refresh_token 模式,通过用户名,放回用户信息
                 .authenticationManager(authenticationManager); // password 模式, 验证密码, 返回用户登录信息
         // @formatter:on
     }
